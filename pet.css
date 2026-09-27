@@ -1,0 +1,246 @@
+html, body {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.pet-window {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end; /* push blob to bottom */
+  padding-bottom: 20px; /* some margin at bottom */
+}
+
+/* Speech Bubble */
+.speech-bubble {
+  position: absolute;
+  top: 20px;
+  width: 240px;
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 16px;
+  box-sizing: border-box;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.speech-bubble.hidden {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+
+.speech-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.speech-bubble .category {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #d81b60;
+  margin-bottom: 6px;
+}
+
+.speech-bubble .summary {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.speech-bubble .deadline {
+  font-size: 11px;
+  background: #ffeb3b;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: inline-block;
+  font-weight: bold;
+}
+
+/* Pet Container */
+.pet-container {
+  width: 180px;
+  height: 180px;
+  position: relative;
+  -webkit-app-region: drag;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* The Blob */
+.blob {
+  width: 140px;
+  height: 140px;
+  background: linear-gradient(135deg, #ffb6c1, #ffdab9);
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8), 0 10px 20px rgba(0,0,0,0.15);
+  position: relative;
+  transition: all 0.5s ease;
+  animation: morph 8s ease-in-out infinite, float 4s ease-in-out infinite;
+  -webkit-app-region: no-drag;
+}
+
+@keyframes morph {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Face */
+.face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Eyes */
+.eye {
+  width: 12px;
+  height: 12px;
+  background: #333;
+  border-radius: 50%;
+  position: relative;
+  animation: blink 4s infinite;
+}
+
+.eye::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+}
+
+@keyframes blink {
+  0%, 96%, 98%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+
+/* Cheeks */
+.cheek {
+  width: 16px;
+  height: 10px;
+  background: rgba(255, 105, 180, 0.4);
+  border-radius: 50%;
+  position: absolute;
+  top: 15px;
+  filter: blur(2px);
+}
+.cheek.left { left: -10px; }
+.cheek.right { right: -10px; }
+
+/* Mouth */
+.mouth {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 6px;
+  border: 2px solid #333;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* States */
+
+/* Idle */
+.pet-container.idle .blob {
+  /* Default morph and float */
+}
+
+/* Alert */
+.pet-container.alert .blob {
+  animation: alertWobble 0.5s ease-in-out infinite;
+  box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8), 0 10px 30px rgba(255,0,0,0.3);
+}
+
+@keyframes alertWobble {
+  0%, 100% { transform: scale(1) translateY(0); }
+  25% { transform: scale(1.1, 0.9) translateY(5px); }
+  75% { transform: scale(0.9, 1.1) translateY(-15px); }
+}
+
+.pet-container.alert .eye {
+  width: 16px;
+  height: 16px;
+  animation: none; /* Eyes wide open */
+}
+
+.pet-container.alert .mouth {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: #333;
+  border-radius: 50%;
+}
+
+/* Listening */
+.pet-container.listening .blob {
+  animation: listenPulse 2s infinite;
+  box-shadow: 0 0 0 0 rgba(173, 216, 230, 0.7), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8);
+}
+
+@keyframes listenPulse {
+  0% { box-shadow: 0 0 0 0 rgba(173, 216, 230, 0.7), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8); }
+  70% { box-shadow: 0 0 0 30px rgba(173, 216, 230, 0), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8); }
+  100% { box-shadow: 0 0 0 0 rgba(173, 216, 230, 0), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8); }
+}
+
+.pet-container.listening .eye {
+  animation: blink 4s infinite;
+}
+
+.pet-container.listening .mouth {
+  width: 8px;
+  height: 4px;
+}
+
+/* Speaking */
+.pet-container.speaking .blob {
+  /* keep normal animations */
+}
+
+.pet-container.speaking .mouth {
+  animation: speakMouth 0.4s infinite alternate;
+  background: #333;
+  border: none;
+}
+
+@keyframes speakMouth {
+  0% { height: 4px; width: 12px; border-radius: 10px; }
+  100% { height: 16px; width: 14px; border-radius: 50%; }
+}

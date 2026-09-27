@@ -1,0 +1,26 @@
+{
+  "name": "adventurous-hawking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "petWindow.js",
+  "scripts": {
+    "start": "node agent.js",
+    "dev": "nodemon agent.js",
+    "electron": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^2.24.0",
+    "dotenv": "^18.0.4",
+    "node-notifier": "^10.0.1",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.7"
+  },
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "nodemon": "^3.1.14"
+  }
+}

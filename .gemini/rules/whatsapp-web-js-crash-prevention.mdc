@@ -1,0 +1,24 @@
+---
+description: Prevents fatal Puppeteer crashes when resolving chat objects in whatsapp-web.js
+globs: *.js
+---
+# Avoid msg.getChat() in whatsapp-web.js
+
+When handling incoming messages in `whatsapp-web.js`, **NEVER** call `await msg.getChat()`. It triggers a flaky Puppeteer DOM evaluation that can crash the agent with `Evaluation failed: r`.
+
+Instead, always identify the chat ID directly from the message object and resolve the human-readable name from the safe memory cache:
+
+```javascript
+// 1. Get ID robustly (works for both incoming and outgoing tests)
+const chatId = msg.fromMe ? msg.to : msg.from;
+
+// 2. Resolve name from memory cache safely
+let chatName = chatId;
+try {
+  const chats = await client.getChats();
+  const targetChat = chats.find(c => c.id._serialized === chatId);
+  if (targetChat && targetChat.name) chatName = targetChat.name;
+} catch (e) {
+  // Safely fallback to raw ID if resolution fails
+}
+```
