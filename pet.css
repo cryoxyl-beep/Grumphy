@@ -1,3 +1,7 @@
+:root {
+  --pet-size: 88px; /* Clean companion scale */
+}
+
 html, body {
   background: transparent !important;
   margin: 0;
@@ -21,9 +25,11 @@ html, body {
 }
 
 /* Speech Bubble */
+#speechBubble,
+#speech-bubble,
 .speech-bubble {
   position: absolute;
-  top: 20px;
+  bottom: 120px;
   width: 240px;
   -webkit-app-region: no-drag;
   cursor: pointer;
@@ -35,6 +41,7 @@ html, body {
   padding: 16px;
   box-sizing: border-box;
   transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: auto;
 }
 
 .speech-bubble.hidden {
@@ -74,173 +81,141 @@ html, body {
   font-weight: bold;
 }
 
-/* Pet Container */
-.pet-container {
-  width: 180px;
-  height: 180px;
-  position: relative;
-  -webkit-app-region: drag;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* The Blob */
-.blob {
-  width: 140px;
-  height: 140px;
-  background: linear-gradient(135deg, #ffb6c1, #ffdab9);
-  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8), 0 10px 20px rgba(0,0,0,0.15);
-  position: relative;
-  transition: all 0.5s ease;
-  animation: morph 8s ease-in-out infinite, float 4s ease-in-out infinite;
+/* Pet Mascot Character Sprite Engine */
+#pet-sprite,
+#pet-character {
+  width: var(--pet-size);
+  height: var(--pet-size);
+  background-image: url('./sprites/spritesheet.webp');
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  margin: 0 auto;
+  user-select: none;
+  pointer-events: auto;
+  cursor: grab;
   -webkit-app-region: no-drag;
+  /* background-size must scale proportionally: 8 columns wide, 9 rows tall */
+  background-size: calc(var(--pet-size) * 8) calc(var(--pet-size) * 9);
 }
 
-@keyframes morph {
-  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-  50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+#pet-sprite:active,
+#pet-character:active {
+  cursor: grabbing;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+@keyframes sprite-cycle-8 {
+  from {
+    background-position-x: 0px;
+  }
+  to {
+    background-position-x: calc(-1 * var(--pet-size) * 8);
+  }
 }
 
-/* Face */
-.face {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+@keyframes sprite-cycle-6 {
+  from {
+    background-position-x: 0px;
+  }
+  to {
+    background-position-x: calc(-1 * var(--pet-size) * 6);
+  }
 }
 
-/* Eyes */
-.eye {
-  width: 12px;
-  height: 12px;
-  background: #333;
-  border-radius: 50%;
-  position: relative;
-  animation: blink 4s infinite;
+@keyframes sprite-cycle-5 {
+  from {
+    background-position-x: 0px;
+  }
+  to {
+    background-position-x: calc(-1 * var(--pet-size) * 5);
+  }
 }
 
-.eye::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 4px;
-  height: 4px;
-  background: white;
-  border-radius: 50%;
+@keyframes sprite-cycle-4 {
+  from {
+    background-position-x: 0px;
+  }
+  to {
+    background-position-x: calc(-1 * var(--pet-size) * 4);
+  }
 }
 
-@keyframes blink {
-  0%, 96%, 98%, 100% { transform: scaleY(1); }
-  97% { transform: scaleY(0.1); }
+/* Row 1: IDLE (6 valid frames) */
+#pet-sprite.state-idle,
+#pet-character.state-idle,
+.state-idle {
+  background-position-y: 0px;
+  animation: sprite-cycle-6 1.4s steps(6) infinite;
 }
 
-/* Cheeks */
-.cheek {
-  width: 16px;
-  height: 10px;
-  background: rgba(255, 105, 180, 0.4);
-  border-radius: 50%;
-  position: absolute;
-  top: 15px;
-  filter: blur(2px);
-}
-.cheek.left { left: -10px; }
-.cheek.right { right: -10px; }
-
-/* Mouth */
-.mouth {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 6px;
-  border: 2px solid #333;
-  border-top: none;
-  border-radius: 0 0 10px 10px;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
+/* Row 2: RUN RIGHT (8 valid frames) */
+#pet-sprite.state-run-right,
+#pet-sprite.state-runRight,
+#pet-character.state-run-right,
+#pet-character.state-runRight,
+.state-run-right,
+.state-runRight {
+  background-position-y: calc(-1 * var(--pet-size) * 1);
+  animation: sprite-cycle-8 0.9s steps(8) infinite;
 }
 
-/* States */
-
-/* Idle */
-.pet-container.idle .blob {
-  /* Default morph and float */
+/* Row 3: RUN LEFT (8 valid frames) */
+#pet-sprite.state-run-left,
+#pet-sprite.state-runLeft,
+#pet-character.state-run-left,
+#pet-character.state-runLeft,
+.state-run-left,
+.state-runLeft {
+  background-position-y: calc(-1 * var(--pet-size) * 2);
+  animation: sprite-cycle-8 0.9s steps(8) infinite;
 }
 
-/* Alert */
-.pet-container.alert .blob {
-  animation: alertWobble 0.5s ease-in-out infinite;
-  box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8), 0 10px 30px rgba(255,0,0,0.3);
+/* Row 4: WAVING (4 valid frames) */
+#pet-sprite.state-waving,
+#pet-character.state-waving,
+.state-waving {
+  background-position-y: calc(-1 * var(--pet-size) * 3);
+  animation: sprite-cycle-4 1.1s steps(4) infinite;
 }
 
-@keyframes alertWobble {
-  0%, 100% { transform: scale(1) translateY(0); }
-  25% { transform: scale(1.1, 0.9) translateY(5px); }
-  75% { transform: scale(0.9, 1.1) translateY(-15px); }
+/* Row 5: JUMP (5 valid frames) */
+#pet-sprite.state-jump,
+#pet-sprite.state-jumping,
+#pet-character.state-jump,
+#pet-character.state-jumping,
+.state-jump,
+.state-jumping {
+  background-position-y: calc(-1 * var(--pet-size) * 4);
+  animation: sprite-cycle-5 0.8s steps(5) infinite;
 }
 
-.pet-container.alert .eye {
-  width: 16px;
-  height: 16px;
-  animation: none; /* Eyes wide open */
+/* Row 6: FAILED (8 valid frames) */
+#pet-sprite.state-failed,
+#pet-character.state-failed,
+.state-failed {
+  background-position-y: calc(-1 * var(--pet-size) * 5);
+  animation: sprite-cycle-8 1.5s steps(8) infinite;
 }
 
-.pet-container.alert .mouth {
-  width: 16px;
-  height: 16px;
-  border: none;
-  background: #333;
-  border-radius: 50%;
+/* Row 7: WAITING (6 valid frames) */
+#pet-sprite.state-waiting,
+#pet-character.state-waiting,
+.state-waiting {
+  background-position-y: calc(-1 * var(--pet-size) * 6);
+  animation: sprite-cycle-6 1.3s steps(6) infinite;
 }
 
-/* Listening */
-.pet-container.listening .blob {
-  animation: listenPulse 2s infinite;
-  box-shadow: 0 0 0 0 rgba(173, 216, 230, 0.7), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8);
+/* Row 8: RUNNING (6 valid frames) */
+#pet-sprite.state-running,
+#pet-character.state-running,
+.state-running {
+  background-position-y: calc(-1 * var(--pet-size) * 7);
+  animation: sprite-cycle-6 0.6s steps(6) infinite;
 }
 
-@keyframes listenPulse {
-  0% { box-shadow: 0 0 0 0 rgba(173, 216, 230, 0.7), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8); }
-  70% { box-shadow: 0 0 0 30px rgba(173, 216, 230, 0), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8); }
-  100% { box-shadow: 0 0 0 0 rgba(173, 216, 230, 0), inset -10px -10px 20px rgba(0,0,0,0.1), inset 10px 10px 20px rgba(255,255,255,0.8); }
-}
-
-.pet-container.listening .eye {
-  animation: blink 4s infinite;
-}
-
-.pet-container.listening .mouth {
-  width: 8px;
-  height: 4px;
-}
-
-/* Speaking */
-.pet-container.speaking .blob {
-  /* keep normal animations */
-}
-
-.pet-container.speaking .mouth {
-  animation: speakMouth 0.4s infinite alternate;
-  background: #333;
-  border: none;
-}
-
-@keyframes speakMouth {
-  0% { height: 4px; width: 12px; border-radius: 10px; }
-  100% { height: 16px; width: 14px; border-radius: 50%; }
+/* Row 9: REVIEW (6 valid frames) */
+#pet-sprite.state-review,
+#pet-character.state-review,
+.state-review {
+  background-position-y: calc(-1 * var(--pet-size) * 8);
+  animation: sprite-cycle-6 1.2s steps(6) infinite;
 }

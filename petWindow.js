@@ -89,9 +89,54 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('ask-pet', async (event, questionText) => {
-    return await askPetQuestion(questionText);
+  ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    if (win && !win.isDestroyed()) {
+      win.setIgnoreMouseEvents(ignore, options);
+    }
   });
+
+  ipcMain.on('move-pet-window', (event, delta, maybeDy) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    if (!win || win.isDestroyed()) return;
+    let dx = 0;
+    let dy = 0;
+    if (typeof delta === 'object' && delta !== null) {
+      dx = delta.dx ?? delta.deltaX ?? delta.x ?? 0;
+      dy = delta.dy ?? delta.deltaY ?? delta.y ?? 0;
+    } else if (typeof delta === 'number') {
+      dx = delta;
+      dy = typeof maybeDy === 'number' ? maybeDy : 0;
+    }
+    const [currX, currY] = win.getPosition();
+    win.setPosition(Math.round(currX + dx), Math.round(currY + dy));
+  });
+
+  ipcMain.on('window-move', (event, pos, maybeY) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    if (!win || win.isDestroyed()) return;
+    let x = 0;
+    let y = 0;
+    if (typeof pos === 'object' && pos !== null) {
+      x = pos.x ?? pos.screenX ?? 0;
+      y = pos.y ?? pos.screenY ?? 0;
+    } else if (typeof pos === 'number') {
+      x = pos;
+      y = typeof maybeY === 'number' ? maybeY : 0;
+    } else {
+      return;
+    }
+    win.setPosition(Math.round(x), Math.round(y));
+  });
+
+  const handleAskPet = async (event, questionText) => {
+    if (!questionText || questionText.trim().length < 2) return "I didn't catch that.";
+    const { askPetQuestion } = require('./aiAnalyzer');
+    return await askPetQuestion(questionText);
+  };
+
+  ipcMain.handle('ask-pet-question', handleAskPet);
+  ipcMain.handle('ask-pet', handleAskPet);
 
   ipcMain.handle('ask-pet-audio', async (event, base64Audio) => {
     const { askPetAudio } = require('./aiAnalyzer');
