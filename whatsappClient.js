@@ -44,6 +44,10 @@ client.on('disconnected', (reason) => {
     console.log('WhatsApp client was disconnected. Reason:', reason);
 });
 
+client.on('error', (err) => {
+    console.error('[WhatsApp Client Error (handled)]:', err && (err.message || err));
+});
+
 module.exports = {
     client
 };

@@ -3,13 +3,55 @@ const { client } = require('./whatsappClient');
 const { analyzeMessage } = require('./aiAnalyzer');
 const { sendAcademicNotification } = require('./notifierService');
 const { saveAlert } = require('./alertsCache');
+const logger = require('./logger');
+const { screen } = require('electron');
 
-console.log(`WhatsApp agent starting... Log Level: ${config.logLevel}`);
+// 1. Add uncaughtException and unhandledRejection
+process.on('uncaughtException', (err) => {
+    logger.error('Main', 'Uncaught Exception', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Main', 'Unhandled Rejection at', promise, 'reason:', reason);
+});
+
+// Startup Log
+async function logStartup() {
+    let ollamaReachable = false;
+    let modelName = process.env.OLLAMA_MODEL || 'qwen2.5:3b';
+    try {
+        const res = await fetch('http://localhost:11434/api/tags', { method: 'GET', timeout: 2000 });
+        if (res.ok) ollamaReachable = true;
+    } catch (e) {}
+
+    let width = 0, height = 0, scaleFactor = 1;
+    try {
+        if (screen && screen.getPrimaryDisplay) {
+            const display = screen.getPrimaryDisplay();
+            width = display.size.width;
+            height = display.size.height;
+            scaleFactor = display.scaleFactor;
+        }
+    } catch (e) {}
+
+    logger.info('Startup', `Ollama reachable? ${ollamaReachable}`);
+    logger.info('Startup', `Model name: ${modelName}`);
+    logger.info('Startup', `Screen size: ${width}x${height}, scaleFactor: ${scaleFactor}`);
+    logger.info('Startup', `Versions: Node ${process.versions.node}, Electron ${process.versions.electron}, Chrome ${process.versions.chrome}`);
+}
+
+// Call logStartup when ready (handled via app.whenReady in the actual electron entrypoint if needed, or here)
+try {
+    const { app } = require('electron');
+    if (app) app.whenReady().then(logStartup);
+} catch (e) {
+    logStartup();
+}
+
+logger.info('Agent', `WhatsApp agent starting... Log Level: ${config.logLevel}`);
 
 const EventEmitter = require('events');
 const agentEvents = new EventEmitter();
 
-// Simple sequential queue to prevent rate-limit bursting
 const messageQueue = [];
 let isProcessingQueue = false;
 
@@ -20,13 +62,10 @@ async function processQueue() {
     const { msg, chatName, messageText } = messageQueue.shift();
 
     try {
-        if (config.logLevel === 'debug') {
-            console.log(`Processing message from ${chatName}...`);
-        }
+        logger.debug('Agent', `Processing message from ${chatName}...`);
 
         const analysisResult = await analyzeMessage(messageText);
         
-        // Ensure we only emit if it's an actual academic update
         if (analysisResult && analysisResult.isAcademicUpdate) {
             const alertData = {
                 ...analysisResult,
@@ -34,16 +73,38 @@ async function processQueue() {
             };
             await sendAcademicNotification(alertData);
             saveAlert(alertData);
-            // Fire event for the desktop pet to intercept
             agentEvents.emit('academic-alert', alertData);
         }
     } catch (error) {
-        console.error("Error during message processing:", error.message);
+        logger.error("Agent", "Error during message processing:", error.message);
     } finally {
         isProcessingQueue = false;
-        // Process next item if available
         processQueue();
     }
+}
+
+const chatNameCache = new Map();
+
+async function resolveGroupName(chatId) {
+    if (chatNameCache.has(chatId)) {
+        return chatNameCache.get(chatId);
+    }
+    let resolved = chatId;
+    try {
+        const chats = await client.getChats();
+        if (Array.isArray(chats)) {
+            for (const c of chats) {
+                if (c && c.id && c.id._serialized) {
+                    chatNameCache.set(c.id._serialized, c.name || c.id._serialized);
+                }
+            }
+        }
+        resolved = chatNameCache.get(chatId) || chatId;
+    } catch (e) {
+        resolved = chatId;
+    }
+    chatNameCache.set(chatId, resolved);
+    return resolved;
 }
 
 client.on('message_create', async (msg) => {
@@ -51,22 +112,13 @@ client.on('message_create', async (msg) => {
         const chatId = msg.fromMe ? msg.to : msg.from;
         const isGroup = chatId && chatId.endsWith('@g.us');
 
-        if (!isGroup) return; // Ignore DMs completely
+        if (!isGroup) return; 
 
-        // Try getting the chat from the already-in-memory chats cache:
-        let chatName = "";
-        try {
-            const chats = await client.getChats();
-            const targetChat = chats.find(c => c.id._serialized === chatId);
-            chatName = targetChat ? targetChat.name : chatId;
-        } catch (e) {
-            chatName = chatId;
-        }
+        const chatName = await resolveGroupName(chatId);
 
-        console.log(`\n[DEBUG] Detected message in Group ID: ${chatId}`);
-        console.log(`[DEBUG] Resolved Group Name: "${chatName}"`);
+        logger.debug('Agent', `Detected message in Group ID: ${chatId}`);
+        logger.debug('Agent', `Resolved Group Name: "${chatName}"`);
 
-        // Check if chatName or chatId matches any entry in config.targetGroupNames:
         if (config.targetGroupNames.length > 0) {
             const isTargetGroup = config.targetGroupNames.some(target => {
                 const matchesName = chatName && chatName.toLowerCase().includes(target.toLowerCase().trim());
@@ -74,38 +126,33 @@ client.on('message_create', async (msg) => {
                 return matchesName || matchesId;
             });
 
-            console.log(`[DEBUG] Did it match your .env targets? ${isTargetGroup}`);
+            logger.debug('Agent', `Did it match your .env targets? ${isTargetGroup}`);
             if (!isTargetGroup) return;
         }
 
-        // Extract message text:
         const messageText = msg.body || msg.caption || "";
-        console.log(`[DEBUG] Message Text Length: ${messageText.trim().length}`);
         
         if (messageText.trim().length < 15) {
-            console.log(`[DEBUG] Message ignored (too short): "${messageText}"`);
             return;
         }
 
-        console.log(`[Group Message from "${chatName}"]: ${messageText.substring(0, 50)}...`);
+        logger.info('Agent', `[Group Message from "${chatName}"]: ${messageText.substring(0, 50)}...`);
 
-        // Push to sequential processing queue
         messageQueue.push({ msg, chatName, messageText });
         processQueue();
 
     } catch (err) {
-        console.error('Error in message listener:', err.stack || err);
+        logger.error('Agent', 'Error in message listener:', err.stack || err);
     }
 });
 
-// Graceful shutdown handlers to prevent orphaned Chromium tasks
 const cleanupAndExit = async () => {
-    console.log('\nShutting down WhatsApp client gracefully...');
+    logger.info('Agent', 'Shutting down WhatsApp client gracefully...');
     try {
         await client.destroy();
-        console.log('Client destroyed successfully.');
+        logger.info('Agent', 'Client destroyed successfully.');
     } catch (e) {
-        console.error('Error destroying client:', e.message);
+        logger.error('Agent', 'Error destroying client:', e.message);
     }
     process.exit(0);
 };
@@ -113,8 +160,7 @@ const cleanupAndExit = async () => {
 process.on('SIGINT', cleanupAndExit);
 process.on('SIGTERM', cleanupAndExit);
 
-// Launch the client
-console.log('Initializing WhatsApp client...');
+logger.info('Agent', 'Initializing WhatsApp client...');
 client.initialize();
 
 module.exports = { agentEvents };

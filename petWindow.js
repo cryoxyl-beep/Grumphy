@@ -1,72 +1,16 @@
-const { app, BrowserWindow, Menu, screen, globalShortcut, ipcMain, session } = require('electron');
-const path = require('path');
+// Anti-Crash Shields: Prevent uncaught exceptions/rejections from killing the desktop pets
+process.on('uncaughtException', (err) => {
+  console.error('[Anti-Crash Shield] Uncaught exception prevented from crashing Electron:', err && (err.stack || err.message || err));
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Anti-Crash Shield] Unhandled rejection prevented from crashing Electron:', reason);
+});
+
+const { app, BrowserWindow, globalShortcut, ipcMain, session } = require('electron');
+const petManager = require('./petManager');
 const { askPetQuestion } = require('./aiAnalyzer');
-
-let mainWindow;
-
-function createWindow() {
-  const { workAreaSize } = screen.getPrimaryDisplay();
-  const width = 280;
-  const height = 400;
-
-  mainWindow = new BrowserWindow({
-    width: width,
-    height: height,
-    // Position it by default at the bottom-right corner just above the taskbar
-    x: workAreaSize.width - width,
-    y: workAreaSize.height - height,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    hasShadow: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  mainWindow.loadFile('index.html');
-
-  // Support right-click context menu
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Mute',
-      type: 'checkbox',
-      checked: false,
-      click: (item) => {
-        if (mainWindow) {
-          mainWindow.webContents.send('toggle-mute', item.checked);
-        }
-      }
-    },
-    {
-      label: 'Reset Position',
-      click: () => {
-        const { workAreaSize: currentWorkArea } = screen.getPrimaryDisplay();
-        mainWindow.setPosition(currentWorkArea.width - width, currentWorkArea.height - height);
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Exit Pet',
-      click: () => {
-        app.quit();
-      }
-    }
-  ]);
-
-  mainWindow.webContents.on('context-menu', (e, params) => {
-    contextMenu.popup({ window: mainWindow, x: params.x, y: params.y });
-  });
-
-  // On Windows, intercept non-client right click (WM_NCRBUTTONUP = 0x00A5)
-  // which fires when right-clicking a drag region.
-  mainWindow.hookWindowMessage(0x00A5, (wParam, lParam) => {
-    contextMenu.popup({ window: mainWindow });
-  });
-}
+const { generateSpeechAudio } = require('./ttsService');
 
 app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
@@ -77,27 +21,36 @@ app.whenReady().then(() => {
     }
   });
 
-  createWindow();
+  // Spawn our multi-companion ecosystem (Pet 1 Scout & Pet 2 Operator)
+  petManager.init();
 
   app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-
-  globalShortcut.register('Ctrl+Shift+Space', () => {
-    if (mainWindow) {
-      mainWindow.webContents.send('trigger-listen');
+    if (petManager.activePets.size === 0) {
+      petManager.init();
     }
   });
 
+  // Global hotkey to trigger voice listening on companions
+  globalShortcut.register('Ctrl+Shift+Space', () => {
+    petManager.broadcast('trigger-listen');
+  });
+
+  // Direct hotkey for Operator to trigger voice/text input
+  globalShortcut.register('Ctrl+Alt+Space', () => {
+    petManager.sendToRole('system', 'trigger-operator-command');
+  });
+
+  // Dynamic Window Click-Through
   ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
-    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    const win = BrowserWindow.fromWebContents(event.sender);
     if (win && !win.isDestroyed()) {
       win.setIgnoreMouseEvents(ignore, options);
     }
   });
 
+  // Delta-based window movement for smooth drag physics
   ipcMain.on('move-pet-window', (event, delta, maybeDy) => {
-    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed()) return;
     let dx = 0;
     let dy = 0;
@@ -112,8 +65,9 @@ app.whenReady().then(() => {
     win.setPosition(Math.round(currX + dx), Math.round(currY + dy));
   });
 
+  // Absolute coordinate window movement (backwards compatible)
   ipcMain.on('window-move', (event, pos, maybeY) => {
-    const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed()) return;
     let x = 0;
     let y = 0;
@@ -129,9 +83,9 @@ app.whenReady().then(() => {
     win.setPosition(Math.round(x), Math.round(y));
   });
 
+  // AI Conversational Handlers
   const handleAskPet = async (event, questionText) => {
     if (!questionText || questionText.trim().length < 2) return "I didn't catch that.";
-    const { askPetQuestion } = require('./aiAnalyzer');
     return await askPetQuestion(questionText);
   };
 
@@ -143,15 +97,20 @@ app.whenReady().then(() => {
     return await askPetAudio(base64Audio);
   });
 
-  // Keep the existing WhatsApp agent running in the background.
-  // We require it here so it doesn't block Electron's initial startup.
-  const { agentEvents } = require('./agent.js');
-
-  agentEvents.on('academic-alert', (data) => {
-    if (mainWindow) {
-      mainWindow.webContents.send('academic-alert', data);
-    }
+  // High-fidelity Microsoft Edge Neural TTS
+  ipcMain.handle('get-neural-tts', async (event, text, voice) => {
+    return await generateSpeechAudio(text, voice || 'en-US-JennyNeural');
   });
+
+  // Route incoming WhatsApp alerts directly to academic companion pets
+  const { agentEvents } = require('./agent.js');
+  agentEvents.on('academic-alert', (data) => {
+    petManager.sendToRole('academic', 'academic-alert', data);
+  });
+});
+
+app.on('before-quit', () => {
+  petManager.setAppQuitting(true);
 });
 
 app.on('will-quit', () => {
@@ -159,6 +118,7 @@ app.on('will-quit', () => {
 });
 
 app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit();
+  if (petManager.isAppQuitting && process.platform !== 'darwin') {
+    app.quit();
+  }
 });
-

@@ -1,25 +1,27 @@
 <div align="center">
 
-# 🐾 Grumphy
+# 🐾 Grumphy Swarm
 
-### *Your Intelligent, All-in-One Desktop Companion & Academic Watchdog*
+### *Intelligent Multi-Pet Desktop Swarm with Local-First AI, Visual Grounding & Academic Monitoring*
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2011-0078D4?style=for-the-badge&logo=windows11&logoColor=white)](https://microsoft.com/windows)
 [![Electron](https://img.shields.io/badge/Electron-44.4.5-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Gemini](https://img.shields.io/badge/AI%20Brain-Gemini%203.1%20Flash--Lite-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Ollama](https://img.shields.io/badge/Local%20AI-Qwen2.5%203B-FF6F61?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.ai/)
+[![Gemini](https://img.shields.io/badge/Vision%20AI-Gemini%202.5%20Flash-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Neural TTS](https://img.shields.io/badge/TTS-Edge--TTS%20Neural-00A4EF?style=for-the-badge&logo=microsoft&logoColor=white)](https://github.com/rany2/edge-tts)
 [![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 
 <br/>
 
-> **Grumphy** is a floating, transparent pixel-art desktop pet that lives in the corner of your screen. Behind its cute, cozy animations is an autonomous AI agent that monitors your WhatsApp groups 24/7 for assignments, exam notices, lab submissions, and deadlines — alerting you with spoken voice announcements and animated reactions in real-time.
+> **Grumphy Swarm** is an autonomous desktop companion engine for Windows. Floating transparently above your work, two animated pixel-art pets—**Scout** and **Operator**—act as your real-time academic watchdog and local OS automation agent.
 
 <br/>
 
 ```
-      /\_/\   
-     ( o.o )  "Psst! Physics Assignment 3 is due tomorrow at 11:59 PM!"
-      > ^ <   
+     Scout (Academic Sentinel)         Operator (OS Automation)
+          /\_/\                               /\_/\   
+         ( o.o )  "Physics Due 11:59PM!"     ( -.- )  "Opening Chrome & Searching..."
+          > ^ <                               > ^ <   
 ```
 
 ---
@@ -28,81 +30,100 @@
 
 ## 🌟 Key Highlights
 
-- 🪟 **True Transparent Canvas & Click Pass-Through**: Grumphy floats seamlessly above your desktop without blocking background apps. Clicks in transparent empty space pass straight through to Chrome, VS Code, or desktop shortcuts via dynamic `setIgnoreMouseEvents`.
-- 🎮 **Hardware-Accelerated Sprite Engine**: Hand-crafted CSS `@keyframes` and `steps(N)` quantization tailored to the exact frame counts of every action row — 100% zero-gap looping with no blank frame flashes or flickering.
-- 📱 **Real-Time WhatsApp Sentinel**: Connects directly to WhatsApp Web via `whatsapp-web.js` to scan designated academic group chats for announcements, exams, viva schedules, and assignments.
-- 🧠 **Gemini Multimodal Intelligence**: Powered by `gemini-3.1-flash-lite` to classify incoming messages into structured JSON, extract exact deadlines, evaluate urgency, and filter out casual chat banter.
-- 🎙️ **Conversational Push-to-Talk**: Press `Ctrl + Shift + Space` or click Grumphy to speak via your microphone. Grumphy queries its local alert cache, consults Gemini, and answers questions about upcoming deadlines using native Text-to-Speech (TTS).
-- 🖱️ **Decoupled Physics & Interactions**: Decoupled from native OS drag limitations so you can drag Grumphy anywhere, hover over him to watch him wave, or double-click to watch him sprint across your screen.
+- 🤖 **Local-First AI Execution**: Operator runs primarily on your local GPU via **Ollama (`qwen2.5:3b`)**, providing fast, zero-latency OS control with zero cloud token usage. Auto-falls back to **Gemini 3.1 Flash-Lite** if Ollama is unreachable.
+- 👁️ **Visual Grounding Engine**: Gives the text-only local model vision. Uses **Gemini 2.5 Flash Vision** to locate UI elements on display screens via normalized `box_2d` coordinates, converting them to physical screen pixels for autonomous clicking and typing.
+- 🛠️ **Full Windows OS Automation**: Autonomous execution of app launching, URL browsing, clipboard typing, hotkey pressing, process management (`taskkill`), screen capturing, and quick desktop note management.
+- 📱 **Real-Time WhatsApp Sentinel**: **Scout** monitors WhatsApp academic group chats 24/7 via `whatsapp-web.js`, using Gemini AI to extract deadlines, calculate urgency, and notify you in real-time.
+- 🗣️ **Expressive Neural Text-to-Speech**: High-fidelity, natural human-like voice synthesis using `edge-tts` (featuring Jenny, Aria, and Sonia Neural voices).
+- 🪟 **Click Pass-Through Canvas**: Floating transparent windows with dynamic `setIgnoreMouseEvents` pass-through—enjoy desktop pets without blocking Chrome, VS Code, or gaming windows.
 
 ---
 
-## 🎭 Grumphy's Action States
+## 👥 Meet the Companions
 
-Grumphy's animations are mapped to a consolidated WebP spritesheet (`./sprites/spritesheet.webp`) running at cozy, companion-grade framerates:
-
-| Row | Action | Trigger / Event | Valid Frames | Timing |
-|:---:|:---|:---|:---:|:---:|
-| **1** | **IDLE** | Default state when resting on desktop | 6 frames | `1.4s infinite` |
-| **2** | **RUN RIGHT** | Dragging mascot window to the right ($dx > 2$) | 8 frames | `0.9s infinite` |
-| **3** | **RUN LEFT** | Dragging mascot window to the left ($dx < -2$) | 8 frames | `0.9s infinite` |
-| **4** | **WAVING** | Mouse cursor hovering over the mascot | 4 frames | `1.1s infinite` |
-| **5** | **JUMP** | Incoming WhatsApp academic alert received | 5 frames | `0.8s infinite` |
-| **6** | **FAILED** | Speech recognition / microphone error or no audio | 8 frames | `1.5s infinite` |
-| **7** | **WAITING** | Microphone actively listening to user voice query | 6 frames | `1.3s infinite` |
-| **8** | **RUNNING** | Playful reaction triggered by **Double-Click** | 6 frames | `0.6s infinite` |
-| **9** | **REVIEW** | AI thinking / TTS reading deadline out loud | 6 frames | `1.2s infinite` |
+| Companion | Role | Primary Function | Primary Brain | Voice Profile | Hotkey |
+|:---:|:---:|:---|:---:|:---:|:---:|
+| **Scout** 🐶 | **Academic Watchdog** | Monitors WhatsApp groups for assignments, circulars, and viva notices | Gemini 3.1 Flash-Lite | `en-US-JennyNeural` (Warm) | `Ctrl + Shift + Space` |
+| **Operator** 💻 | **OS Automation Agent** | Executes OS commands, launches apps, types text, and visually clicks UI elements | Ollama `qwen2.5:3b` *(Gemini Fallback)* | `en-US-AriaNeural` (Smooth) | `Ctrl + Alt + Space` |
 
 ---
 
-## 🕹️ Controls & Gestures
+## 🎭 Spritesheet Action Matrix
 
-| Action | Control | Description |
+Both pets feature custom WebP sprite sheets (`./sprites/spritesheet.webp` and `./sprites/pet2-spritesheet.webp`) with frame-perfect CSS quantization:
+
+| Row | Action State | Visual Behavior | Trigger / Event | Timing |
+|:---:|:---|:---|:---|:---:|
+| **1** | **IDLE** | Calm breathing / blinking | Resting state on desktop | `1.4s infinite` |
+| **2** | **RUN RIGHT** | Stepping right | Dragging / moving rightward | `0.9s infinite` |
+| **3** | **RUN LEFT** | Stepping left | Dragging / moving leftward | `0.9s infinite` |
+| **4** | **WAVING** | Friendly wave | Mouse hover over mascot | `1.1s infinite` |
+| **5** | **JUMP** | Alert bounce | Academic alert received | `0.8s infinite` |
+| **6** | **FAILED** | Sweatdrop / dizzy error | Execution failure or microphone error | `1.5s infinite` |
+| **7** | **WAITING** | Listening / attentive look | Microphone active / listening | `1.3s infinite` |
+| **8** | **RUNNING (WORK)** | Typing on laptop | Autonomous tool execution in progress | `0.6s infinite` |
+| **9** | **REVIEW (HAPPY)** | Confirmed / speaking | Task complete / reading summary out loud | `1.2s infinite` |
+
+---
+
+## 🛠️ System Automation Tools
+
+Operator autonomously invokes these tools during its multi-step execution loop:
+
+| Tool | Signature | Functionality |
 |:---|:---|:---|
-| **Wave** | `Hover` | Move your mouse over Grumphy to see him wave hello. |
-| **Drag & Move** | `Click + Drag` | Pick up Grumphy and move him anywhere on your screen. He runs in the direction he is pulled! |
-| **Sprint** | `Double-Click` | Double-click Grumphy to trigger a rapid sprint animation for 2 seconds. |
-| **Voice Chat** | `Click` or `Ctrl+Shift+Space` | Activates push-to-talk microphone. Grumphy listens for 3.5s and speaks the answer. |
-| **Dismiss Bubble** | `Click Bubble` | Click the floating frosted-glass notification bubble to dismiss it immediately. |
-| **Context Menu** | `Right-Click` | Opens the native desktop menu with options to **Mute Audio**, **Reset Position**, or **Exit**. |
+| **`open_url`** | `{ url, browser? }` | Opens any HTTP/HTTPS link in default browser or specific browser (`chrome`, `edge`). |
+| **`launch_application`** | `{ appName }` | Launches Windows executables (`notepad`, `calc`, `code`, `spotify`, etc.). |
+| **`close_application`** | `{ processName }` | Safely terminates process via `taskkill` after user confirmation bubble. |
+| **`type_text`** | `{ text }` | Types text into active input using Electron clipboard restoration + `Ctrl+V`. |
+| **`press_key`** | `{ key }` | Triggers key presses (`Enter`, `Tab`, `Escape`, `ctrl+a`, `ctrl+l`, arrows). |
+| **`click_coordinate`** | `{ x, y }` | DPI-aware physical mouse click via `user32.dll` (`SetProcessDPIAware` + `mouse_event`). |
+| **`look_at_screen_and_find`** | `{ targetDescription }` | Captures screen, queries Gemini Vision for 2D bounding box, converts to physical `(x,y)`. |
+| **`take_screenshot`** | `{ destinationPath }` | Captures primary display frame and saves PNG/JPEG file. |
+| **`getSystemDiagnostics`** | `{}` | Returns real-time RAM usage, CPU load, and system uptime. |
 
 ---
 
-## 🏗️ Architecture & Data Flow
+## 🏗️ Architecture & Agent Flow
 
 ```mermaid
 flowchart TD
-    subgraph WhatsApp Backend
-        WA[whatsapp-web.js Client] -->|Incoming Group Message| Filter[Target Group Filter]
-        Filter -->|Pass Clean Text| AI[aiAnalyzer.js<br/>Gemini 3.1 Flash-Lite]
-        AI -->|Extract Category, Deadline, Urgency| Cache[(alerts-cache.json<br/>Recent 25 Alerts)]
+    subgraph User Input
+        User[User Voice / Hotkey Command] -->|Ctrl+Alt+Space| Renderer[pet.js Renderer]
     end
 
-    subgraph Electron Main Process
-        AI -->|Broadcast agentEvents| WindowBridge[petWindow.js]
-        WindowBridge -->|IPC: academic-alert| Renderer[Renderer Engine<br/>pet.js]
-        WindowBridge -->|IPC: set-ignore-mouse-events| DWM[Windows DWM Compositor]
-        WindowBridge -->|IPC: move-pet-window| Bounds[Window Bounds Manager]
+    subgraph Agent Controller & Fallback
+        Renderer -->|IPC: execute-agent-task| AI[aiAnalyzer.js]
+        AI -->|POST http://localhost:11434| Ollama{Ollama Local GPU<br/>qwen2.5:3b}
+        Ollama -- Timeout / ECONNREFUSED --> GeminiFallback[Gemini 3.1 Flash-Lite]
     end
 
-    subgraph Desktop UI Layer
-        Renderer -->|Hardware Render| CSS[pet.css<br/>steps Quantizer]
-        Renderer -->|SpeechSynthesisUtterance| TTS[Windows TTS Engine]
-        Renderer -->|navigator.mediaDevices| Mic[Local Microphone]
-        Mic -->|3.5s WebM Base64| WindowBridge
+    subgraph Visual Grounding & Tools
+        Ollama -->|Tool Call: look_at_screen_and_find| Vision[Gemini 2.5 Flash Vision]
+        Vision -->|Return box_2d [ymin,xmin,ymax,xmax]| MapCoords[Physical Pixel Converter]
+        MapCoords -->|Normalized X,Y| ClickTool[click_coordinate Tool]
+        Ollama -->|Tool Call: open_url / launch_application| SysTools[systemTools.js Execution Engine]
+    end
+
+    subgraph OS Layer
+        SysTools -->|DPI-Aware Windows Win32| Desktop[Windows 11 OS]
+        SysTools -->|Edge-TTS Service| Audio[Spoken Neural Feedback]
     end
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - **Windows 10 / 11**
 - **Node.js 18+** or **Node.js 20+**
-- A Google Gemini API key ([Get one for free at Google AI Studio](https://aistudio.google.com/))
-- A WhatsApp account on your smartphone
+- **Ollama** installed with model loaded:
+  ```bash
+  ollama pull qwen2.5:3b
+  ```
+- A free **Google Gemini API Key** ([Get one at Google AI Studio](https://aistudio.google.com/))
 
 ### Installation
 
@@ -112,94 +133,64 @@ flowchart TD
    cd Grumphy
    ```
 
-2. **Install project dependencies:**
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Configure your `.env` file:**
+3. **Configure environment (`.env`):**
    Create a `.env` file in the project root:
    ```env
-   # Your Google Gemini API Key
+   # Google Gemini API Key (For Vision Grounding & Cloud Fallback)
    GEMINI_API_KEY=your_gemini_api_key_here
 
-   # Comma-separated list of WhatsApp group names to monitor
-   TARGET_GROUPS="CSE-A - 2026-30, Academic Circulars, 26-30 Batch GCET"
+   # Ollama Model Name (Default: qwen2.5:3b)
+   OLLAMA_MODEL=qwen2.5:3b
 
-   # Logging level (debug, info, warn, error)
-   LOG_LEVEL=info
+   # WhatsApp Target Groups to Monitor
+   TARGET_GROUPS="CSE-A - 2026-30, Academic Circulars"
+
+   # Logging Level (debug, info, warn, error)
+   LOG_LEVEL=debug
    ```
 
-4. **Launch Grumphy:**
+4. **Launch the Swarm:**
    ```bash
    npm run electron
    ```
 
-> 📱 **First-Time QR Login**: On the initial run, a WhatsApp QR code will be generated in your terminal. Open WhatsApp on your phone > **Linked Devices** > **Link a Device** and scan the code. Your session is saved securely in `./.wwebjs_auth/` so you won't need to scan it again!
+> 📱 **WhatsApp Authentication**: On initial startup, scan the terminal QR code with your phone. Authentication data is saved locally in `./.wwebjs_auth/`.
 
 ---
 
-## 🧪 Running Automated Tests
+## 📝 Logging & Diagnostics
 
-Grumphy includes a built-in regression test suite verifying spritesheet asset geometry, CSS frame calculation parity, and Electron IPC handlers:
+Operator writes log telemetry to `logs/operator-YYYY-MM-DD.log` and the terminal.
+- Adjust verbosity using `LOG_LEVEL=debug` or `LOG_LEVEL=info` in `.env`.
+- Automatically logs LLM step iterations, tool execution times, DPI conversions, and fallback triggers.
+
+---
+
+## 🧪 Testing
+
+Run the automated regression test suite:
 
 ```bash
+# Run headless verification suite
 npm test
-```
 
-Expected output:
-```
-========================================
-Running Principal Architect Verification
-========================================
-
-[PASS] Spritesheet asset exists and matches 1536x1872 (8x9 frames)
-[PASS] index.html structure has div#pet-sprite and speechBubble without img#pet-character
-[PASS] pet.css has correct keyframe math, scale, and cozy frame timings
-[PASS] petWindow.js IPC move-pet-window and window-move work with both object and numeric args
-[PASS] Live Electron window execution: boot click-through, state machine, drag, bubble
-
-========================================
-Results: 5 PASSED, 0 FAILED
-========================================
+# Run agent flow & tool execution suite
+node test-agent-flow.js
 ```
 
 ---
 
-## 📁 Project Structure
+## 📄 License
 
-```
-Grumphy/
-├── .env.example             # Template for API keys and group names
-├── .gitignore               # Ignores credentials, node_modules, and cache
-├── agent.js                 # Background WhatsApp monitoring agent & event emitter
-├── aiAnalyzer.js            # Gemini 3.1 Flash-Lite schema analysis & voice query handler
-├── alertsCache.js           # Lightweight JSON circular cache (last 25 alerts)
-├── config.js                # Environment configuration loader
-├── ecosystem.config.js      # PM2 background process manager config
-├── index.html               # Semantic viewport with frosted-glass speech bubble
-├── package.json             # NPM scripts, dependencies & Electron configuration
-├── pet.css                  # Pixel-perfect CSS steps() engine & glassmorphism UI
-├── pet.js                   # Client-side state machine, TTS, voice recorder & drag physics
-├── petWindow.js             # Electron main process, global hotkeys, click pass-through
-├── test-verification.js     # Headless Electron verification suite
-└── sprites/
-    └── spritesheet.webp     # Consolidated 1536x1872 master character sheet (8x9)
-```
-
----
-
-## 🔮 Future Roadmap
-
-- [ ] **Telegram & Discord Integrations**: Unified multi-channel alerts in one desktop companion.
-- [ ] **Custom Skins & Costumes**: Community-driven Shimeji skin loader and custom sprite sheets.
-- [ ] **Direct Notion / Google Calendar Sync**: Auto-export detected deadlines directly to your calendar.
-- [ ] **Task Completion Rewards**: Earn cute animations and XP when you mark assignments as complete!
-
----
+This project is licensed under the **ISC License**.
 
 <div align="center">
 
-Crafted with ❤️ and Gemini AI. Keep your desktop lively and your assignments on time!
+Crafted with ❤️ using Electron, Ollama, Gemini AI, and Edge-TTS.
 
 </div>
